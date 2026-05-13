@@ -21,7 +21,10 @@ const getAllStates = async (req, res) => {
     const mongoStates = await State.find().exec();
     const merged = data.map(st => {
         const mongoEntry = mongoStates.find(m => m.stateCode === st.code);
-        return { ...st, funfacts: mongoEntry?.funfacts || [] };
+        if (mongoEntry) {
+            return { ...st, funfacts: mongoEntry.funfacts };
+        }
+        return st;
     });
 
     res.json(merged);
@@ -29,8 +32,11 @@ const getAllStates = async (req, res) => {
 
 const getState = async (req, res) => {
     const state = findStateData(req.code);
-    const funfacts = await getFunfactsForCode(req.code);
-    res.json({ ...state, funfacts: funfacts || [] });
+    const doc = await State.findOne({ stateCode: req.code }).exec();
+    if (doc) {
+        return res.json({ ...state, funfacts: doc.funfacts });
+    }
+    res.json(state);
 };
 
 const getFunfact = async (req, res) => {
